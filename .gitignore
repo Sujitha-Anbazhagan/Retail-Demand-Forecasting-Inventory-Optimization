@@ -1,0 +1,40 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data
+data/raw/
+data/processed/
+
+# Trained models
+models/*.pkl
+models/*.joblib
+
+# Google Cloud credentials
+config/*.json
+service-account*.json
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
+
+# dbt
+dbt_project/target/
+dbt_project/logs/
+dbt_project/dbt_packages/
+
+# OS files
+.DS_Store
+Thumbs.db
