@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: raw
+    database: steady-webbing-507608-i8
+    schema: retail_forecasting_raw
+    tables:
+      - name: calendar
+      - name: prices
+      - name: sales_long

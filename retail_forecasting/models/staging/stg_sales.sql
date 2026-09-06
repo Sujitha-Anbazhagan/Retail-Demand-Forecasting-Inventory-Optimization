@@ -1,0 +1,20 @@
+select
+    id,
+    item_id,
+    dept_id,
+    cat_id,
+    store_id,
+    state_id,
+    d,
+    sales,
+    date,
+    wm_yr_wk,
+    wday,
+    month,
+    year,
+    event_name_1,
+    event_type_1,
+    snap_CA,
+    snap_TX,
+    snap_WI
+from {{ source('raw', 'sales_long') }}
