@@ -5,3 +5,5 @@ m5_data/
 m5-forecasting-accuracy.zip
 .env
 *.log
+
+outputs/
