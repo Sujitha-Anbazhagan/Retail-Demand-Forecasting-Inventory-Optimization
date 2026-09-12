@@ -31,13 +31,32 @@ st.caption("M5 Walmart dataset - Prophet + LightGBM forecasts")
 with st.spinner("Loading forecast data from BigQuery..."):
     df = load_forecast_data()
 
-st.success(f"Connected. Loaded {df.shape[0]:,} rows from BigQuery.")
+st.sidebar.header("Filters")
 
-st.subheader("Raw forecast data (preview)")
-st.dataframe(df.head(20))
+store_options = sorted(df["store_id"].unique())
+selected_store = st.sidebar.selectbox("Store", store_options)
 
-st.subheader("Quick stats")
-col1, col2, col3 = st.columns(3)
-col1.metric("Total rows", f"{df.shape[0]:,}")
-col2.metric("Unique items", df["item_id"].nunique())
-col3.metric("Models used", df["model"].nunique())
+items_in_store = sorted(df[df["store_id"] == selected_store]["item_id"].unique())
+selected_item = st.sidebar.selectbox("Item", items_in_store)
+
+model_options = sorted(df["model"].unique())
+selected_model = st.sidebar.selectbox("Model", model_options)
+
+filtered = df[
+    (df["store_id"] == selected_store)
+    & (df["item_id"] == selected_item)
+    & (df["model"] == selected_model)
+].sort_values("date")
+
+st.subheader(f"{selected_item} @ {selected_store} ({selected_model})")
+
+if filtered.empty:
+    st.warning("No data for this combination. Try a different filter selection.")
+else:
+    st.dataframe(filtered)
+
+    st.subheader("Quick stats for selection")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Rows", filtered.shape[0])
+    col2.metric("Avg actual sales", round(filtered["actual_sales"].mean(), 2))
+    col3.metric("Avg predicted sales", round(filtered["predicted_sales"].mean(), 2))
