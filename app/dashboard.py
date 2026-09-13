@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
@@ -52,11 +53,27 @@ st.subheader(f"{selected_item} @ {selected_store} ({selected_model})")
 
 if filtered.empty:
     st.warning("No data for this combination. Try a different filter selection.")
-else:
+elif len(filtered) < 2:
+    st.info("Only a single summary data point is available for this selection "
+            "(Prophet stores one averaged forecast per item, not daily values). "
+            "Switch to lightgbm in the Model filter to see a full daily chart.")
     st.dataframe(filtered)
+else:
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(filtered["date"], filtered["actual_sales"], label="Actual", marker="o", markersize=3)
+    ax.plot(filtered["date"], filtered["predicted_sales"], label="Predicted", marker="o", markersize=3, linestyle="--")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Units sold")
+    ax.set_title(f"Actual vs Predicted Sales - {selected_item} @ {selected_store}")
+    ax.legend()
+    fig.autofmt_xdate()
+    st.pyplot(fig)
 
     st.subheader("Quick stats for selection")
     col1, col2, col3 = st.columns(3)
     col1.metric("Rows", filtered.shape[0])
     col2.metric("Avg actual sales", round(filtered["actual_sales"].mean(), 2))
     col3.metric("Avg predicted sales", round(filtered["predicted_sales"].mean(), 2))
+
+    with st.expander("View raw data"):
+        st.dataframe(filtered)
