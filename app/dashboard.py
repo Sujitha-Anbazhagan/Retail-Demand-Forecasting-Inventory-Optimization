@@ -9,6 +9,8 @@ PROJECT_ID = "steady-webbing-507608-i8"
 DATASET_ID = "retail_forecasting_raw"
 TABLE_ID = "forecast_outputs"
 
+STOCKOUT_RISK_RATIO = 1.3
+
 st.set_page_config(page_title="Retail Demand Forecasting", layout="wide")
 
 @st.cache_resource
@@ -32,6 +34,26 @@ st.caption("M5 Walmart dataset - Prophet + LightGBM forecasts")
 with st.spinner("Loading forecast data from BigQuery..."):
     df = load_forecast_data()
 
+st.subheader("Overview")
+
+total_predicted = df["predicted_sales"].sum()
+total_actual = df["actual_sales"].sum()
+avg_ratio = (df["predicted_sales"] / df["actual_sales"].replace(0, pd.NA)).mean()
+
+at_risk_count = (
+    df.assign(ratio=df["predicted_sales"] / df["actual_sales"].replace(0, pd.NA))
+    .query("ratio > @STOCKOUT_RISK_RATIO")["item_id"]
+    .nunique()
+)
+
+kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+kpi1.metric("Total predicted demand", f"{total_predicted:,.0f}")
+kpi2.metric("Total actual sales (test period)", f"{total_actual:,.0f}")
+kpi3.metric("Avg predicted/actual ratio", f"{avg_ratio:.2f}")
+kpi4.metric("Items at stockout risk", at_risk_count, help=f"Items where predicted demand exceeds actual by more than {STOCKOUT_RISK_RATIO}x")
+
+st.divider()
+
 st.sidebar.header("Filters")
 
 store_options = sorted(df["store_id"].unique())
@@ -49,7 +71,7 @@ filtered = df[
     & (df["model"] == selected_model)
 ].sort_values("date")
 
-st.subheader(f"{selected_item} @ {selected_store} ({selected_model})")
+st.subheader(f"Detail view: {selected_item} @ {selected_store} ({selected_model})")
 
 if filtered.empty:
     st.warning("No data for this combination. Try a different filter selection.")
@@ -69,11 +91,16 @@ else:
     fig.autofmt_xdate()
     st.pyplot(fig)
 
-    st.subheader("Quick stats for selection")
     col1, col2, col3 = st.columns(3)
     col1.metric("Rows", filtered.shape[0])
     col2.metric("Avg actual sales", round(filtered["actual_sales"].mean(), 2))
     col3.metric("Avg predicted sales", round(filtered["predicted_sales"].mean(), 2))
+
+    item_ratio = filtered["predicted_sales"].mean() / max(filtered["actual_sales"].mean(), 1)
+    if item_ratio > STOCKOUT_RISK_RATIO:
+        st.warning(f"Stockout risk: predicted demand is {item_ratio:.2f}x actual sales for this item.")
+    else:
+        st.success(f"No significant stockout risk detected (ratio: {item_ratio:.2f}x).")
 
     with st.expander("View raw data"):
         st.dataframe(filtered)
