@@ -104,3 +104,21 @@ else:
 
     with st.expander("View raw data"):
         st.dataframe(filtered)
+
+    st.divider()
+    st.subheader("What-if: price scenario")
+    st.caption("Simulate how a price change might affect predicted demand, using a standard price elasticity approximation (not a live model re-run).")
+
+    price_change_pct = st.slider("Price change (%)", min_value=-30, max_value=30, value=0, step=5, help="Negative = price drop, positive = price increase")
+
+    ASSUMED_ELASTICITY = -1.5
+
+    baseline_demand = filtered["predicted_sales"].mean()
+    demand_multiplier = 1 + (ASSUMED_ELASTICITY * (price_change_pct / 100))
+    demand_multiplier = max(demand_multiplier, 0)
+    adjusted_demand = baseline_demand * demand_multiplier
+
+    wcol1, wcol2, wcol3 = st.columns(3)
+    wcol1.metric("Baseline predicted demand", f"{baseline_demand:.1f}")
+    wcol2.metric("Adjusted predicted demand", f"{adjusted_demand:.1f}", delta=f"{adjusted_demand - baseline_demand:+.1f}")
+    wcol3.metric("Price change applied", f"{price_change_pct:+d}%")
