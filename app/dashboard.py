@@ -122,3 +122,19 @@ else:
     wcol1.metric("Baseline predicted demand", f"{baseline_demand:.1f}")
     wcol2.metric("Adjusted predicted demand", f"{adjusted_demand:.1f}", delta=f"{adjusted_demand - baseline_demand:+.1f}")
     wcol3.metric("Price change applied", f"{price_change_pct:+d}%")
+
+    if price_change_pct != 0:
+        fig2, ax2 = plt.subplots(figsize=(6, 3))
+        bars = ax2.bar(["Baseline", "Adjusted"], [baseline_demand, adjusted_demand], color=["#4C72B0", "#DD8452"])
+        ax2.set_ylabel("Predicted demand (avg units)")
+        ax2.set_title(f"Demand impact of {price_change_pct:+d}% price change")
+        for bar in bars:
+            height = bar.get_height()
+            ax2.annotate(f"{height:.1f}", (bar.get_x() + bar.get_width() / 2, height), ha="center", va="bottom")
+        st.pyplot(fig2)
+
+        pct_demand_change = (adjusted_demand - baseline_demand) / baseline_demand * 100 if baseline_demand else 0
+        direction = "increase" if pct_demand_change > 0 else "decrease"
+        st.caption(f"A {abs(price_change_pct)}% price {'drop' if price_change_pct < 0 else 'increase'} is estimated to {direction} demand by {abs(pct_demand_change):.1f}%, based on the assumed elasticity of {ASSUMED_ELASTICITY}.")
+    else:
+        st.caption("Move the slider above to see the projected demand impact.")
