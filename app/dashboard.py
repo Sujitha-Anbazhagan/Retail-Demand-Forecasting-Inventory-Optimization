@@ -3,24 +3,31 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from google.cloud import bigquery
 from google.oauth2 import service_account
- 
-KEY_PATH = r"C:\Users\Suji\.gcp\key.json"
+
 PROJECT_ID = "steady-webbing-507608-i8"
 DATASET_ID = "retail_forecasting_raw"
 TABLE_ID = "forecast_outputs"
 FUTURE_TABLE_ID = "future_forecasts"
- 
+
 STOCKOUT_RISK_RATIO = 1.3
- 
+
 st.set_page_config(page_title="Retail Demand Forecasting", layout="wide")
- 
- 
 @st.cache_resource
 def get_bigquery_client():
-    credentials = service_account.Credentials.from_service_account_file(KEY_PATH)
+    try:
+        has_secrets = "gcp_service_account" in st.secrets
+    except Exception:
+        has_secrets = False
+
+    if has_secrets:
+        credentials = service_account.Credentials.from_service_account_info(
+            dict(st.secrets["gcp_service_account"])
+        )
+    else:
+        KEY_PATH = r"C:\Users\Suji\.gcp\streamlit-reader-key.json"
+        credentials = service_account.Credentials.from_service_account_file(KEY_PATH)
     return bigquery.Client(credentials=credentials, project=PROJECT_ID)
- 
- 
+
 @st.cache_data(ttl=600)
 def load_forecast_data():
     client = get_bigquery_client()
